@@ -1,25 +1,18 @@
 import streamlit as st
 import requests
 from datetime import datetime
-import urllib.parse
 
 st.set_page_config(page_title="AI Memory Reconstruction", layout="centered")
 
-# -----------------------------
-# Session State
-# -----------------------------
 if "history" not in st.session_state:
     st.session_state.history = []
 
 if "last_prompt" not in st.session_state:
     st.session_state.last_prompt = None
 
-
-# -----------------------------
-# UI
-# -----------------------------
 st.title("🧠 AI Memory Reconstruction")
 
+hf_token = st.text_input("HuggingFace API Key", type="password")
 prompt = st.text_area("Enter your memory prompt")
 
 col1, col2 = st.columns(2)
@@ -27,18 +20,15 @@ generate_btn = col1.button("Generate New Memory")
 modify_btn = col2.button("Reconstruct Last Memory")
 
 
-# -----------------------------
-# Image Generation Function
-# -----------------------------
 def generate_image(final_prompt):
-    try:
-        encoded_prompt = urllib.parse.quote(final_prompt)
-        url = f"https://image.pollinations.ai/prompt/{encoded_prompt}"
+    API_URL = "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2"
+    headers = {"Authorization": f"Bearer {hf_token}"}
 
-        response = requests.get(url, timeout=60)
+    try:
+        response = requests.post(API_URL, headers=headers, json={"inputs": final_prompt}, timeout=60)
 
         if response.status_code != 200:
-            return None, f"Error {response.status_code}"
+            return None, response.text
 
         return response.content, None
 
@@ -46,12 +36,9 @@ def generate_image(final_prompt):
         return None, str(e)
 
 
-# -----------------------------
-# Button Logic
-# -----------------------------
 if generate_btn:
-    if not prompt:
-        st.warning("Please enter a prompt.")
+    if not hf_token or not prompt:
+        st.warning("Enter HuggingFace API key and prompt.")
     else:
         image, error = generate_image(prompt)
         if error:
@@ -67,7 +54,7 @@ if generate_btn:
 
 if modify_btn:
     if not st.session_state.last_prompt:
-        st.warning("No previous memory to reconstruct.")
+        st.warning("No previous memory.")
     elif not prompt:
         st.warning("Enter additional details.")
     else:
@@ -85,9 +72,6 @@ if modify_btn:
             st.session_state.last_prompt = combined_prompt
 
 
-# -----------------------------
-# Display History
-# -----------------------------
 st.markdown("---")
 st.subheader("🖼 Reconstructed Memories")
 
