@@ -1,4 +1,4 @@
-[12:26 PM, 2/27/2026] Adrian College Fri: import streamlit as st
+import streamlit as st
 import requests
 from datetime import datetime
 
