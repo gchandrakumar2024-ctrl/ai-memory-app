@@ -78,7 +78,7 @@ for item in reversed(st.session_state.history):
         st.markdown("---")
         st.markdown(f"*Prompt:* {item['prompt']}")
         st.image(item["image"], use_container_width=True)
-[12:28 PM, 2/27/2026] Adrian College Fri: import streamlit as st
+import streamlit as st
 import requests
 from datetime import datetime
 import urllib.parse
