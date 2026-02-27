@@ -6,7 +6,7 @@ from datetime import datetime
 st.set_page_config(page_title="AI Memory Reconstruction", layout="centered")
 
 # -----------------------------
-# Session State Initialization
+# Session State
 # -----------------------------
 if "history" not in st.session_state:
     st.session_state.history = []
@@ -22,7 +22,7 @@ st.title("🧠 AI Memory Reconstruction")
 
 endpoint = st.text_input(
     "API Endpoint URL",
-    placeholder="https://api.example.com/generate"
+    value="https://api.openai.com/v1/images/generations"
 )
 
 api_key = st.text_input("API Key", type="password")
@@ -44,6 +44,7 @@ def generate_image(final_prompt):
     }
 
     payload = {
+        "model": "gpt-image-1",
         "prompt": final_prompt,
         "size": "1024x1024"
     }
@@ -57,30 +58,24 @@ def generate_image(final_prompt):
         )
 
         if response.status_code != 200:
-            return None, "API error. Check endpoint or API key."
+            return None, response.text
 
         data = response.json()
-
-        if "image" in data:
-            image_b64 = data["image"]
-        elif "data" in data and len(data["data"]) > 0:
-            image_b64 = data["data"][0].get("b64_json")
-        else:
-            return None, "Unexpected API response format."
-
+        image_b64 = data["data"][0]["b64_json"]
         image_bytes = base64.b64decode(image_b64)
+
         return image_bytes, None
 
-    except requests.exceptions.RequestException:
-        return None, "Could not connect to API."
+    except Exception as e:
+        return None, str(e)
 
 
 # -----------------------------
 # Button Logic
 # -----------------------------
 if generate_btn:
-    if not endpoint or not api_key or not prompt:
-        st.warning("Please fill all fields.")
+    if not api_key or not prompt:
+        st.warning("Please enter API key and prompt.")
     else:
         image, error = generate_image(prompt)
         if error:
@@ -100,9 +95,7 @@ if modify_btn:
     elif not prompt:
         st.warning("Enter additional details.")
     else:
-        combined_prompt = (
-            st.session_state.last_prompt + ", " + prompt
-        )
+        combined_prompt = st.session_state.last_prompt + ", " + prompt
 
         image, error = generate_image(combined_prompt)
         if error:
@@ -117,7 +110,7 @@ if modify_btn:
 
 
 # -----------------------------
-# Display History (Newest First)
+# Display History
 # -----------------------------
 st.markdown("---")
 st.subheader("🖼 Reconstructed Memories")
